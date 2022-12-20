@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: git-sync
+spec:
+  initContainers:
+    - name: git-sync
+      image: "k8s.gcr.io/git-sync/git-sync:v3.4.0"
+      env:
+        - name: GIT_SYNC_BRANCH
+          value: "master"
+        - name: GIT_SYNC_REPO
+          value: "ssh://git@github.com:HARSHITHA-SC23/dagRepositories.git"
+        - name: GIT_SYNC_DEPTH
+          value: "1"
+        - name: GIT_SYNC_ROOT
+          value: "/dags"
+        - name: GIT_SYNC_DEST
+          value: "/opt/airflow/dags"
+        - name: GIT_SYNC_ADD_USER
+          value: "true"
+        - name: GIT_SYNC_ONE_TIME
+          value: "true"
+      volumeMounts:
+        - name: airflow-dags
+          mountPath: /dags
+  containers:
+    - env:
+        - name: AIRFLOW__CORE__EXECUTOR
+          value: CeleryExecutor
+        # Hard Coded Airflow Envs
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airflow-fernet-key 
+              key: fernet-key
+        - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+          valueFrom:
+            secretKeyRef:
+              name: airflow-airflow-metadata
+              key: connection
+        - name: AIRFLOW_CONN_AIRFLOW_DB
+          valueFrom:
+            secretKeyRef:
+              name: airflow-airflow-metadata
+              key: connection
+        - name: AIRFLOW__WEBSERVER__SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: airflow-webserver-secret-key
+              key: webserver-secret-key
+        - name: AIRFLOW__CELERY__BROKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: airflow-broker-url
+              key: connection
+      image: dummy_image
+      imagePullPolicy: IfNotPresent
+      name: base
+      volumeMounts:
+        - mountPath: "/opt/airflow/logs"
+          name: airflow-logs
+        - mountPath: /opt/airflow/dags
+          name: airflow-dags
+          subPath: repo/airflow/example_dags
+          readOnly: false
+        - mountPath: /opt/airflow/airflow.cfg
+          name: airflow-config
+          readOnly: true
+          subPath: airflow.cfg
+  restartPolicy: Never
+  securityContext:
+    runAsUser: 50000
+    fsGroup: 50000
+  serviceAccountName: "airflow-worker"
+  volumes:
+    - name: airflow-dags
+      emptyDir: {}
+    - name: airflow-logs
+      emptyDir: {}
+    - configMap:
+        name: airflow-airflow-config
+      name: airflow-config
