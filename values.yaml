@@ -1782,7 +1782,7 @@ dags:
     repo: https://github.com/HARSHITHA-SC23/dagRepositories.git
     branch: master
     rev: HEAD
-    depth: 1
+    depth: 0
     # the number of consecutive failures allowed before aborting
     maxFailures: 0
     # subpath within the repo where dags are located
