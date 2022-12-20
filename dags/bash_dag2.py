@@ -16,7 +16,7 @@ with DAG(
     dag_id='first_kubernetes_dag',
     default_args=default_args,
     description='This is our first dag writing on Kubernetes',
-    start_date= datetime(2022, 12, 12, 6),
+    start_date= datetime(2022, 12, 19),
     schedule_interval='@daily'
 ) as dag:
     task1 = BashOperator(
